@@ -1,0 +1,30 @@
+package com.wesjou.keymanager.user;
+
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+
+    UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public UserResponse createUser(CreateUserRequest request) {
+        User user = new User();
+        user.setEmail(request.email());
+        
+        userRepository.save(user);
+        return new UserResponse(user.getId(), user.getEmail());
+    }
+
+    @Override
+    public List<User> getAllUser() {
+        return userRepository.findAll();
+    }
+
+}
