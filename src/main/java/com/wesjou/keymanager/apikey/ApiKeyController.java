@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 class ApiKeyController {
@@ -18,20 +17,19 @@ class ApiKeyController {
     }
 
     @PostMapping("/users/{userId}/apikeys")
-    ResponseEntity<ApiKeyResponse> generateApiKey(@PathVariable Long userId) throws NoSuchAlgorithmException {
-        ApiKeyResponse apiKeyResponse = apiKeyService.generateApiKey(userId);
-        return ResponseEntity.ok(apiKeyResponse);
+    @ResponseStatus(HttpStatus.CREATED)
+    ApiKeyResponse generateApiKey(@PathVariable Long userId) throws NoSuchAlgorithmException {
+        return apiKeyService.generateApiKey(userId);
     }
 
     @GetMapping("/users/{userId}/apikeys")
-    ResponseEntity<List<ApiKeyInfoResponse>> listApiKeys(@PathVariable Long userId) {
-        List<ApiKeyInfoResponse> listApiKeys = apiKeyService.getApiKeys(userId);
-        return ResponseEntity.ok(listApiKeys);
+    List<ApiKeyInfoResponse> listApiKeys(@PathVariable Long userId) {
+        return apiKeyService.getApiKeys(userId);
     }
 
     @DeleteMapping("/apikeys/{apiKeyId}")
-    ResponseEntity<Void> revokeApiKey(@PathVariable Long apiKeyId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void revokeApiKey(@PathVariable Long apiKeyId) {
         apiKeyService.revokeApiKey(apiKeyId);
-        return ResponseEntity.noContent().build();
     }
 }
