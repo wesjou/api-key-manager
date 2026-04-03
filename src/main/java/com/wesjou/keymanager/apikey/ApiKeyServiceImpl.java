@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.wesjou.keymanager.exception.ApiKeyGenerationException;
-import com.wesjou.keymanager.exception.InvalidApiKeyException;
+import com.wesjou.keymanager.exception.ApiKeyNotFoundException;
 import com.wesjou.keymanager.exception.UserNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -71,7 +71,7 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
     @Override
     public void revokeApiKey(Long apiKeyId) {
-        ApiKey apiKey = apiKeyRepository.findById(apiKeyId).orElseThrow(InvalidApiKeyException::new);
+        ApiKey apiKey = apiKeyRepository.findById(apiKeyId).orElseThrow(ApiKeyNotFoundException::new);
 
         apiKey.setRevoked(true);
         apiKeyRepository.save(apiKey);
