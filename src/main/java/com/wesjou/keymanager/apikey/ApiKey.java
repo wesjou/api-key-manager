@@ -27,6 +27,9 @@ class ApiKey {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "public_id", unique = true, nullable = false)
+    private String publicId;
+
     @Column(name = "key_hash")
     private String keyHash;
 
@@ -34,9 +37,11 @@ class ApiKey {
     @JoinColumn(name = "user_id")
     private User user;
 
+    private boolean revoked;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-    private boolean revoked;
+
 
 }

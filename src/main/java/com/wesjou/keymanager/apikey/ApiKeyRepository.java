@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 interface ApiKeyRepository extends JpaRepository<ApiKey, Long> {
-    Optional<ApiKey> findByKeyHash(String keyHash);
-
+    Optional<ApiKey> findByPublicId(String publicId);
     List<ApiKey> findAllByUser(User user);
 }
 

@@ -34,24 +34,30 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
         User user = userRepository.findById(userId).orElseThrow(ApiKeyGenerationException::new);
 
-        byte[] rawKey = new byte[32];
-        secureRandom.nextBytes(rawKey);
+        byte[] publicBytes = new byte[4];
+        secureRandom.nextBytes(publicBytes);
+        String publicId = encoder.encodeToString(publicBytes).substring(0, 6);
 
-        String encodedKey = "ak_" + encoder.encodeToString(rawKey);
+        byte[] secretBytes = new byte[32];
+        secureRandom.nextBytes(secretBytes);
+        String secretKey = encoder.encodeToString(secretBytes);
+
+        String fullKey = "ak_" + publicId + "." + secretKey;
 
         // for database storing
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hashedKey = digest.digest(encodedKey.getBytes(StandardCharsets.UTF_8));
+        byte[] hashedKey = digest.digest(secretKey.getBytes(StandardCharsets.UTF_8));
         String encodedHashedKey = encoder.encodeToString(hashedKey);
 
         ApiKey apiKey = new ApiKey();
         apiKey.setUser(user);
+        apiKey.setPublicId("ak_" + publicId);
         apiKey.setKeyHash(encodedHashedKey);
         apiKey.setRevoked(false);
 
         apiKeyRepository.save(apiKey);
 
-        return new ApiKeyResponse(encodedKey);
+        return new ApiKeyResponse(fullKey);
     }
 
     @Override
@@ -63,6 +69,7 @@ class ApiKeyServiceImpl implements ApiKeyService {
         return listApiKeys.stream()
                 .map(apiKey -> new ApiKeyInfoResponse(
                         apiKey.getId(),
+                        apiKey.getPublicId(),
                         apiKey.isRevoked(),
                         apiKey.getCreatedAt()
                 )).toList();
@@ -78,19 +85,29 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
     @Override
     public boolean isValid(String apiKey) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hashedKey = digest.digest(apiKey.getBytes(StandardCharsets.UTF_8));
-        String encodedHashedKey = encoder.encodeToString(hashedKey);
+        String[] parts = apiKey.split("\\.");
+        if (parts.length != 2) return false;
 
-        Optional<ApiKey> apiKeyOptional = apiKeyRepository.findByKeyHash(encodedHashedKey);
+        String publicId = parts[0];
+        String secretKey = parts[1];
 
+        Optional<ApiKey> apiKeyOptional = apiKeyRepository.findByPublicId(publicId);
         if (apiKeyOptional.isEmpty()) {
             return false;
         }
 
-        ApiKey storedHashedKey = apiKeyOptional.get();
+        ApiKey storedSecretKey = apiKeyOptional.get();
 
-        return !storedHashedKey.isRevoked();
+        if (storedSecretKey.isRevoked()) {
+            return false;
+        }
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hashedSecretKey = digest.digest(secretKey.getBytes(StandardCharsets.UTF_8));
+        String providedSecretKey = encoder.encodeToString(hashedSecretKey);
+
+        return MessageDigest.isEqual(providedSecretKey.getBytes(StandardCharsets.UTF_8),
+                storedSecretKey.getKeyHash().getBytes(StandardCharsets.UTF_8));
     }
 
 }
