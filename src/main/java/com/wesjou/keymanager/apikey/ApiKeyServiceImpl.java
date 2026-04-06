@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -36,13 +37,13 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
         byte[] publicBytes = new byte[4];
         secureRandom.nextBytes(publicBytes);
-        String publicId = encoder.encodeToString(publicBytes).substring(0, 6);
+        String publicId = "ak_" + encoder.encodeToString(publicBytes).substring(0, 6);
 
         byte[] secretBytes = new byte[32];
         secureRandom.nextBytes(secretBytes);
         String secretKey = encoder.encodeToString(secretBytes);
 
-        String fullKey = "ak_" + publicId + "." + secretKey;
+        String fullKey = publicId + "." + secretKey;
 
         // for database storing
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -51,13 +52,14 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
         ApiKey apiKey = new ApiKey();
         apiKey.setUser(user);
-        apiKey.setPublicId("ak_" + publicId);
+        apiKey.setPublicId(publicId);
         apiKey.setKeyHash(encodedHashedKey);
         apiKey.setRevoked(false);
+        apiKey.setExpiresAt(LocalDateTime.now().plusDays(30));
 
         apiKeyRepository.save(apiKey);
 
-        return new ApiKeyResponse(fullKey);
+        return new ApiKeyResponse(fullKey, publicId, apiKey.getExpiresAt());
     }
 
     @Override
@@ -92,15 +94,11 @@ class ApiKeyServiceImpl implements ApiKeyService {
         String secretKey = parts[1];
 
         Optional<ApiKey> apiKeyOptional = apiKeyRepository.findByPublicId(publicId);
-        if (apiKeyOptional.isEmpty()) {
+        if (apiKeyOptional.isEmpty() || isInvalid(apiKeyOptional.get())) {
             return false;
         }
 
         ApiKey storedSecretKey = apiKeyOptional.get();
-
-        if (storedSecretKey.isRevoked()) {
-            return false;
-        }
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hashedSecretKey = digest.digest(secretKey.getBytes(StandardCharsets.UTF_8));
@@ -108,6 +106,13 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
         return MessageDigest.isEqual(providedSecretKey.getBytes(StandardCharsets.UTF_8),
                 storedSecretKey.getKeyHash().getBytes(StandardCharsets.UTF_8));
+    }
+
+    private boolean isInvalid(ApiKey key) {
+        boolean isRevoked = key.isRevoked();
+        boolean isExpired = key.getExpiresAt() != null && key.getExpiresAt().isBefore(LocalDateTime.now());
+
+        return isRevoked || isExpired;
     }
 
 }

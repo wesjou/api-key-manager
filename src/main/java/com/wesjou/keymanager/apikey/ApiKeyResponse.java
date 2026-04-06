@@ -1,5 +1,7 @@
 package com.wesjou.keymanager.apikey;
 
-record ApiKeyResponse(String encodedKey) {
+import java.time.LocalDateTime;
+
+record ApiKeyResponse(String encodedKey, String publicId, LocalDateTime expiresAt) {
 
 }

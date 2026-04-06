@@ -39,6 +39,9 @@ class ApiKey {
 
     private boolean revoked;
 
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
