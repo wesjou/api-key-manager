@@ -19,13 +19,13 @@ class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/users")
+    @PostMapping("/users/create")
     @ResponseStatus(HttpStatus.CREATED)
     UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
         return userService.createUser(request);
     }
 
-    @GetMapping("/users")
+    @GetMapping("/users/list")
     List<UserResponse> getAllUser() {
         return userService.getAllUser();
     }
