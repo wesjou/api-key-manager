@@ -1,5 +1,6 @@
 package com.wesjou.keymanager.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +17,8 @@ public class JwtService {
     private final SecretKey secretKey;
     private final long accessTokenExpirationMs;
 
-    public JwtService(@Value("${jwt.secret}") String secret, @Value("${jwt.access-token-expiration-ms}") long accessTokenExpirationMs) {
+    public JwtService(@Value("${jwt.secret}") String secret,
+                      @Value("${jwt.access-token-expiration-ms}") long accessTokenExpirationMs) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessTokenExpirationMs = accessTokenExpirationMs;
     }
@@ -33,4 +35,26 @@ public class JwtService {
                 .signWith(secretKey)
                 .compact();
     }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public String extractEmail(String token) {
+        return extractAllClaims(token).getSubject();
+    }
+
+    private boolean isTokenExpired(Claims claims) {
+        return claims.getExpiration().before(new Date());
+    }
+
+    public boolean isTokenValid(String token, String email) {
+        Claims claims = extractAllClaims(token);
+        return claims.getSubject().equals(email) && !isTokenExpired(claims);
+    }
+
 }

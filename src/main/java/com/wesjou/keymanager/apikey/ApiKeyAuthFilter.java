@@ -26,8 +26,8 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
-            String apiKey = request.getHeader("x-api-key");
-            if (apiKey == null || !apiKeyService.isValid(apiKey)) {
+            String authHeader = request.getHeader("x-api-key");
+            if (authHeader == null || !apiKeyService.isValid(authHeader)) {
                 throw new BadApiKeyException();
             }
 
@@ -40,6 +40,6 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getServletPath();
-        return path.startsWith("/users") || path.startsWith("/apikeys");
+        return !path.startsWith("/data");
     }
 }
