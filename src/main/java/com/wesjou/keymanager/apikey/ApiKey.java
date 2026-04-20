@@ -30,16 +30,16 @@ class ApiKey {
     @Column(name = "public_id", unique = true, nullable = false)
     private String publicId;
 
-    @Column(name = "key_hash")
+    @Column(name = "key_hash", nullable = false)
     private String keyHash;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     private boolean revoked;
 
-    @Column(name = "expires_at")
+    @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
     @CreationTimestamp
