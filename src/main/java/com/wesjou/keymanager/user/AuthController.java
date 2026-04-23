@@ -20,7 +20,7 @@ class AuthController {
         this.jwtService = jwtService;
     }
 
-    @PostMapping("/login")
+    @PostMapping("/api/v1/login")
     String login(@Valid @RequestBody LoginRequest request) {
         Authentication authentication =
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(),

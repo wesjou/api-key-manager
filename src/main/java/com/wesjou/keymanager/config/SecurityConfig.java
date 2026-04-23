@@ -4,6 +4,7 @@ import com.wesjou.keymanager.exception.ErrorEnvelope;
 import com.wesjou.keymanager.exception.ErrorResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -34,9 +35,12 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/list", "/apikeys/", "/data/create").hasRole("ADMIN")
-                        .requestMatchers("/data/read", "/users/*/apikeys").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/login", "/users/create").permitAll()
+                        .requestMatchers("/api/v1/users/*/apikeys","/api/v1/data").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/data", "/api/v1/users/*/apikeys").hasRole("USER")
+                        .requestMatchers(HttpMethod.POST,"/api/v1/users").hasRole("USER")
+                        .requestMatchers("/api/v1/users").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/users/*/apikeys/*").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/v1/login").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
