@@ -47,7 +47,7 @@ Security is fully stateless:
 | Method | Endpoint | Access | Purpose |
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/users` | Public | Create a new user |
-| `GET` | `/api/v1/users` | Admin only | List users |
+| `GET` | `/api/v1/users` | ADMIN only | List users |
 | `POST` | `/api/v1/login` | Public | Exchange credentials for a JWT |
 | `POST` | `/api/v1/users/{userId}/apikeys` | Owner of {userId} or ADMIN | Generate an API key |
 | `GET` | `/api/v1/users/{userId}/apikeys` | Owner of {userId} or ADMIN | List API keys for a user |
