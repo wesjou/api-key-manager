@@ -18,9 +18,9 @@ class GlobalExceptionHandler {
                 LocalDateTime.now()));
     }
 
-    @ExceptionHandler(ApiKeyGenerationException.class)
+    @ExceptionHandler(UnauthenticatedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    ErrorEnvelope handleApiKeyGeneration(ApiKeyGenerationException ex) {
+    ErrorEnvelope handleUnauthenticated(UnauthenticatedException ex) {
         return new ErrorEnvelope(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage(),
                 LocalDateTime.now()));
     }
@@ -56,6 +56,20 @@ class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     ErrorEnvelope handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
         return new ErrorEnvelope(new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage(),
+                LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(ApiKeyAccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    ErrorEnvelope handleApiKeyAccessDenied(ApiKeyAccessDeniedException ex) {
+        return new ErrorEnvelope(new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage(),
+                LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(AuthenticatedUserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    ErrorEnvelope handleAuthenticatedUserNotFound(AuthenticatedUserNotFoundException ex) {
+        return new ErrorEnvelope(new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage(),
                 LocalDateTime.now()));
     }
 

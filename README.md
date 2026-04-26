@@ -44,16 +44,19 @@ Security is fully stateless:
 
 ## Core Endpoints
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `POST` | `/api/v1/users` | Create a new user |
-| `GET` | `/api/v1/users` | List users |
-| `POST` | `/api/v1/login` | Exchange credentials for a JWT |
-| `POST` | `/api/v1/users/{userId}/apikeys` | Generate an API key |
-| `GET` | `/api/v1/users/{userId}/apikeys` | List API keys for a user |
-| `DELETE` | `/api/v1/users/{userId}/apikeys/{apiKeyId}` | Revoke an API key |
-| `GET` | `/api/v1/data` | Example protected read endpoint |
-| `POST` | `/api/v1/data` | Example protected write endpoint |
+| Method | Endpoint | Access | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/users` | Public | Create a new user |
+| `GET` | `/api/v1/users` | Admin only | List users |
+| `POST` | `/api/v1/login` | Public | Exchange credentials for a JWT |
+| `POST` | `/api/v1/users/{userId}/apikeys` | Owner of {userId} or ADMIN | Generate an API key |
+| `GET` | `/api/v1/users/{userId}/apikeys` | Owner of {userId} or ADMIN | List API keys for a user |
+| `DELETE` | `/api/v1/users/{userId}/apikeys/{apiKeyId}` | Owner of {userId} or ADMIN | Revoke an API key |
+| `GET` | `/api/v1/data` | USER or ADMIN | Example protected read endpoint |
+| `POST` | `/api/v1/data` | ADMIN only | Example protected write endpoint |
+
+API key endpoints use ownership-based authorization: regular users can only create, list, and revoke keys for their
+own userId, while admins can manage any user’s keys.
 
 ## Request Flow
 

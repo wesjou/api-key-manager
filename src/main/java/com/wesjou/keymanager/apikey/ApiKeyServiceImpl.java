@@ -1,10 +1,14 @@
 package com.wesjou.keymanager.apikey;
 
-import com.wesjou.keymanager.exception.ApiKeyGenerationException;
+import com.wesjou.keymanager.exception.ApiKeyAccessDeniedException;
 import com.wesjou.keymanager.exception.ApiKeyNotFoundException;
+import com.wesjou.keymanager.exception.AuthenticatedUserNotFoundException;
+import com.wesjou.keymanager.exception.UnauthenticatedException;
 import com.wesjou.keymanager.exception.UserNotFoundException;
 import com.wesjou.keymanager.user.User;
 import com.wesjou.keymanager.user.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -14,6 +18,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -30,10 +35,28 @@ class ApiKeyServiceImpl implements ApiKeyService {
         this.userRepository = userRepository;
     }
 
+    private void checkOwnership(Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new UnauthenticatedException();
+        }
+
+        String email = authentication.getName();
+        User currentAuthUser = userRepository.findByEmail(email)
+                .orElseThrow(AuthenticatedUserNotFoundException::new);
+
+        boolean hasAdminRole = authentication.getAuthorities().stream()
+                .anyMatch(r -> Objects.equals(r.getAuthority(), "ROLE_ADMIN"));
+        if (!userId.equals(currentAuthUser.getId()) && !hasAdminRole) {
+            throw new ApiKeyAccessDeniedException();
+        }
+    }
+
     @Override
     public ApiKeyResponse generateApiKey(Long userId) throws NoSuchAlgorithmException {
+        checkOwnership(userId);
 
-        User user = userRepository.findById(userId).orElseThrow(ApiKeyGenerationException::new);
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
         byte[] publicBytes = new byte[4];
         secureRandom.nextBytes(publicBytes);
@@ -64,6 +87,8 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
     @Override
     public List<ApiKeyInfoResponse> getApiKeys(Long userId) {
+        checkOwnership(userId);
+
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
         List<ApiKey> listApiKeys = apiKeyRepository.findAllByUser(user);
@@ -78,8 +103,24 @@ class ApiKeyServiceImpl implements ApiKeyService {
     }
 
     @Override
-    public void revokeApiKey(Long apiKeyId) {
+    public void revokeApiKey(Long apiKeyId, Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new UnauthenticatedException();
+        }
+
+        boolean hasAdminRole = authentication.getAuthorities().stream()
+                .anyMatch(r -> Objects.equals(r.getAuthority(), "ROLE_ADMIN"));
+
         ApiKey apiKey = apiKeyRepository.findById(apiKeyId).orElseThrow(ApiKeyNotFoundException::new);
+
+        String email = authentication.getName();
+        User currentAuthUser = userRepository.findByEmail(email).orElseThrow(AuthenticatedUserNotFoundException::new);
+        boolean isAuthUser = currentAuthUser.getId().equals(userId) || hasAdminRole;
+        boolean isOwner = apiKey.getUser().getId().equals(userId);
+        if (!(isAuthUser && isOwner)) {
+            throw new ApiKeyAccessDeniedException();
+        }
 
         apiKey.setRevoked(true);
         apiKeyRepository.save(apiKey);

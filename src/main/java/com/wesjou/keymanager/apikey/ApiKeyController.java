@@ -35,7 +35,7 @@ class ApiKeyController {
 
     @DeleteMapping("/{apiKeyId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void revokeApiKey(@PathVariable Long apiKeyId) {
-        apiKeyService.revokeApiKey(apiKeyId);
+    void revokeApiKey(@PathVariable Long apiKeyId, @PathVariable Long userId) {
+        apiKeyService.revokeApiKey(apiKeyId, userId);
     }
 }
