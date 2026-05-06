@@ -2,6 +2,8 @@ package com.wesjou.keymanager.config;
 
 import com.wesjou.keymanager.exception.ErrorEnvelope;
 import com.wesjou.keymanager.exception.ErrorResponse;
+import com.wesjou.keymanager.jwt.JwtAuthenticationFilter;
+import com.wesjou.keymanager.limiter.RateLimitingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -25,9 +27,11 @@ import java.time.LocalDateTime;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitingFilter rateLimitingFilter;
 
-    SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, RateLimitingFilter rateLimitingFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.rateLimitingFilter = rateLimitingFilter;
     }
 
     @Bean
@@ -40,11 +44,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/login").permitAll()
                         .requestMatchers("/api/v1/users/*/apikeys").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/v1/users/*/apikeys/*").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/v1/data").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/data").hasRole("USER")
+                        .requestMatchers("/api/v1/data").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimitingFilter, JwtAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             ObjectMapper mapper = new ObjectMapper();

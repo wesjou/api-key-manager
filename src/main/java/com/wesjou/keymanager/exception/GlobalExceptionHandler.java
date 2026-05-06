@@ -73,4 +73,10 @@ class GlobalExceptionHandler {
                 LocalDateTime.now()));
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    ErrorEnvelope handleRateLimitExceeded(RateLimitExceededException ex) {
+        return new ErrorEnvelope(new ErrorResponse(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage(),
+                LocalDateTime.now()));
+    }
 }
