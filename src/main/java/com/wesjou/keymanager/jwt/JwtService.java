@@ -1,4 +1,4 @@
-package com.wesjou.keymanager.security;
+package com.wesjou.keymanager.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -36,6 +36,15 @@ public class JwtService {
                 .compact();
     }
 
+    public String extractEmail(String token) {
+        return extractAllClaims(token).getSubject();
+    }
+
+    public boolean isTokenValid(String token, String email) {
+        Claims claims = extractAllClaims(token);
+        return claims.getSubject().equals(email) && !isTokenExpired(claims);
+    }
+
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
@@ -44,17 +53,7 @@ public class JwtService {
                 .getPayload();
     }
 
-    public String extractEmail(String token) {
-        return extractAllClaims(token).getSubject();
-    }
-
     private boolean isTokenExpired(Claims claims) {
         return claims.getExpiration().before(new Date());
     }
-
-    public boolean isTokenValid(String token, String email) {
-        Claims claims = extractAllClaims(token);
-        return claims.getSubject().equals(email) && !isTokenExpired(claims);
-    }
-
 }

@@ -1,6 +1,6 @@
 package com.wesjou.keymanager.user;
 
-import com.wesjou.keymanager.security.JwtService;
+import com.wesjou.keymanager.jwt.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

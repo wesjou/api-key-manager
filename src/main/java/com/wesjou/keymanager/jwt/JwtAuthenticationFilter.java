@@ -1,13 +1,11 @@
-package com.wesjou.keymanager.config;
+package com.wesjou.keymanager.jwt;
 
-import com.wesjou.keymanager.security.JwtService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,13 +21,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final HandlerExceptionResolver resolver;
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
     public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService,
-                                   @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
+                                   HandlerExceptionResolver handlerExceptionResolver) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
-        this.resolver = resolver;
+        this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
     @Override
@@ -57,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             filterChain.doFilter(request, response);
         } catch (JwtException | IllegalArgumentException e) {
-            resolver.resolveException(request, response, null, e);
+            handlerExceptionResolver.resolveException(request, response, null, e);
         }
     }
 }

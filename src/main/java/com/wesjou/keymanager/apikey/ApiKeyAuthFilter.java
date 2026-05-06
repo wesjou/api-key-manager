@@ -6,21 +6,21 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 @Component
 public class ApiKeyAuthFilter extends OncePerRequestFilter {
     private final ApiKeyService apiKeyService;
-    private final HandlerExceptionResolver resolver;
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
-    ApiKeyAuthFilter(ApiKeyService apiKeyService, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
+    ApiKeyAuthFilter(ApiKeyService apiKeyService, HandlerExceptionResolver handlerExceptionResolver) {
         this.apiKeyService = apiKeyService;
-        this.resolver = resolver;
+        this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
     @Override
@@ -32,8 +32,8 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
-        } catch (Exception e) {
-            resolver.resolveException(request, response, null, e);
+        } catch (BadApiKeyException | NoSuchAlgorithmException e) {
+            handlerExceptionResolver.resolveException(request, response, null, e);
         }
     }
 
