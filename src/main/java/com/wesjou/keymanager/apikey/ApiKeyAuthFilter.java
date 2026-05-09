@@ -1,5 +1,6 @@
 package com.wesjou.keymanager.apikey;
 
+import com.wesjou.keymanager.exception.ApiKeyScopeDeniedException;
 import com.wesjou.keymanager.exception.BadApiKeyException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,12 +28,22 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             String authHeader = request.getHeader("x-api-key");
-            if (authHeader == null || !apiKeyService.isValid(authHeader)) {
+            if (authHeader == null) {
                 throw new BadApiKeyException();
             }
 
+            var requiredScope = switch (request.getMethod()) {
+                case "GET" -> Scope.READ;
+                case "POST" -> Scope.WRITE;
+                case "DELETE" -> Scope.ADMIN;
+                default -> throw new ApiKeyScopeDeniedException();
+            };
+            if (!apiKeyService.hasScope(authHeader, requiredScope)) {
+                throw new ApiKeyScopeDeniedException();
+            }
+
             filterChain.doFilter(request, response);
-        } catch (BadApiKeyException | NoSuchAlgorithmException e) {
+        } catch (BadApiKeyException | NoSuchAlgorithmException | ApiKeyScopeDeniedException e) {
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
     }
@@ -40,6 +51,6 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getServletPath();
-        return !path.startsWith("/api/v1/data");
+        return !path.equals("/api/v1/data");
     }
 }

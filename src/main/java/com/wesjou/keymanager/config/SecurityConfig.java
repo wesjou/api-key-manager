@@ -1,5 +1,6 @@
 package com.wesjou.keymanager.config;
 
+import com.wesjou.keymanager.apikey.ApiKeyAuthFilter;
 import com.wesjou.keymanager.exception.ErrorEnvelope;
 import com.wesjou.keymanager.exception.ErrorResponse;
 import com.wesjou.keymanager.jwt.JwtAuthenticationFilter;
@@ -28,10 +29,13 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitingFilter rateLimitingFilter;
+    private final ApiKeyAuthFilter apiKeyAuthFilter;
 
-    SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, RateLimitingFilter rateLimitingFilter) {
+    SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, RateLimitingFilter rateLimitingFilter,
+                   ApiKeyAuthFilter apiKeyAuthFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.rateLimitingFilter = rateLimitingFilter;
+        this.apiKeyAuthFilter = apiKeyAuthFilter;
     }
 
     @Bean
@@ -44,11 +48,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/login").permitAll()
                         .requestMatchers("/api/v1/users/*/apikeys").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/v1/users/*/apikeys/*").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/v1/data").authenticated()
+                        .requestMatchers("/api/v1/data").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitingFilter, JwtAuthenticationFilter.class)
+                .addFilterAfter(apiKeyAuthFilter, RateLimitingFilter.class)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             ObjectMapper mapper = new ObjectMapper();

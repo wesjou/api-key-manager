@@ -1,6 +1,6 @@
 package com.wesjou.keymanager.user;
 
-enum Role {
+public enum Role {
     ADMIN,
     USER
 }

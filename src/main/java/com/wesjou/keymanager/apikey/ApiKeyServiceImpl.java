@@ -2,9 +2,12 @@ package com.wesjou.keymanager.apikey;
 
 import com.wesjou.keymanager.exception.ApiKeyAccessDeniedException;
 import com.wesjou.keymanager.exception.ApiKeyNotFoundException;
+import com.wesjou.keymanager.exception.ApiKeyScopeDeniedException;
 import com.wesjou.keymanager.exception.AuthenticatedUserNotFoundException;
+import com.wesjou.keymanager.exception.InvalidScopeException;
 import com.wesjou.keymanager.exception.UnauthenticatedException;
 import com.wesjou.keymanager.exception.UserNotFoundException;
+import com.wesjou.keymanager.user.Role;
 import com.wesjou.keymanager.user.User;
 import com.wesjou.keymanager.user.UserRepository;
 import org.springframework.security.core.Authentication;
@@ -35,26 +38,17 @@ class ApiKeyServiceImpl implements ApiKeyService {
         this.userRepository = userRepository;
     }
 
-    private void checkOwnership(Long userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new UnauthenticatedException();
-        }
-
-        String email = authentication.getName();
-        User currentAuthUser = userRepository.findByEmail(email)
-                .orElseThrow(AuthenticatedUserNotFoundException::new);
-
-        boolean hasAdminRole = authentication.getAuthorities().stream()
-                .anyMatch(r -> Objects.equals(r.getAuthority(), "ROLE_ADMIN"));
-        if (!userId.equals(currentAuthUser.getId()) && !hasAdminRole) {
-            throw new ApiKeyAccessDeniedException();
-        }
-    }
-
     @Override
-    public ApiKeyResponse generateApiKey(Long userId) throws NoSuchAlgorithmException {
-        checkOwnership(userId);
+    public ApiKeyResponse generateApiKey(Long userId, CreateApiKeyRequest createApiKeyRequest) throws NoSuchAlgorithmException {
+        var scopes = createApiKeyRequest.scopes();
+        if (scopes == null || scopes.isEmpty()) {
+            throw new InvalidScopeException();
+        }
+
+        var authUser = authorizeApiKeyAccess(userId);
+        if (authUser.getRole() != Role.ADMIN && scopes.contains(Scope.ADMIN)) {
+            throw new ApiKeyScopeDeniedException();
+        }
 
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
@@ -79,6 +73,7 @@ class ApiKeyServiceImpl implements ApiKeyService {
         apiKey.setKeyHash(encodedHashedKey);
         apiKey.setRevoked(false);
         apiKey.setExpiresAt(LocalDateTime.now().plusDays(30));
+        apiKey.setScopes(createApiKeyRequest.scopes());
 
         apiKeyRepository.save(apiKey);
 
@@ -87,7 +82,7 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
     @Override
     public List<ApiKeyInfoResponse> getApiKeys(Long userId) {
-        checkOwnership(userId);
+        authorizeApiKeyAccess(userId);
 
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
@@ -128,25 +123,50 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
     @Override
     public boolean isValid(String apiKey) throws NoSuchAlgorithmException {
+        return authorizeApiKey(apiKey).isPresent();
+    }
+
+    @Override
+    public boolean hasScope(String apiKey, Scope requiredScope) throws NoSuchAlgorithmException {
+        var storedKey = authorizeApiKey(apiKey);
+        if (storedKey.isEmpty()) {
+            return false;
+        }
+
+        var scopes = storedKey.get().getScopes();
+        if (scopes == null || scopes.isEmpty() || requiredScope == null) {
+            return false;
+        }
+
+        return scopes.contains(Scope.ADMIN) || scopes.contains(requiredScope);
+    }
+
+    private Optional<ApiKey> authorizeApiKey(String apiKey) throws NoSuchAlgorithmException {
         String[] parts = apiKey.split("\\.");
-        if (parts.length != 2) return false;
+        if (parts.length != 2) {
+            return Optional.empty();
+        }
 
         String publicId = parts[0];
         String secretKey = parts[1];
 
         Optional<ApiKey> apiKeyOptional = apiKeyRepository.findByPublicId(publicId);
         if (apiKeyOptional.isEmpty() || isInvalid(apiKeyOptional.get())) {
-            return false;
+            return Optional.empty();
         }
 
-        ApiKey storedSecretKey = apiKeyOptional.get();
+        ApiKey storedApiKey = apiKeyOptional.get();
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hashedSecretKey = digest.digest(secretKey.getBytes(StandardCharsets.UTF_8));
         String providedSecretKey = encoder.encodeToString(hashedSecretKey);
 
-        return MessageDigest.isEqual(providedSecretKey.getBytes(StandardCharsets.UTF_8),
-                storedSecretKey.getKeyHash().getBytes(StandardCharsets.UTF_8));
+        if (!MessageDigest.isEqual(providedSecretKey.getBytes(StandardCharsets.UTF_8),
+                storedApiKey.getKeyHash().getBytes(StandardCharsets.UTF_8))) {
+            return Optional.empty();
+        } else {
+            return Optional.of(storedApiKey);
+        }
     }
 
     private boolean isInvalid(ApiKey key) {
@@ -154,6 +174,24 @@ class ApiKeyServiceImpl implements ApiKeyService {
         boolean isExpired = key.getExpiresAt() != null && key.getExpiresAt().isBefore(LocalDateTime.now());
 
         return isRevoked || isExpired;
+    }
+
+    private User authorizeApiKeyAccess(Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new UnauthenticatedException();
+        }
+
+        String email = authentication.getName();
+        User currentAuthUser = userRepository.findByEmail(email)
+                .orElseThrow(AuthenticatedUserNotFoundException::new);
+
+        boolean hasAdminRole = authentication.getAuthorities().stream()
+                .anyMatch(r -> Objects.equals(r.getAuthority(), "ROLE_ADMIN"));
+        if (!userId.equals(currentAuthUser.getId()) && !hasAdminRole) {
+            throw new ApiKeyAccessDeniedException();
+        }
+        return currentAuthUser;
     }
 
 }

@@ -4,8 +4,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 interface ApiKeyService {
-    ApiKeyResponse generateApiKey(Long userId) throws NoSuchAlgorithmException;
+    ApiKeyResponse generateApiKey(Long userId, CreateApiKeyRequest createApiKeyRequest) throws NoSuchAlgorithmException;
     List<ApiKeyInfoResponse> getApiKeys(Long userId);
     void revokeApiKey(Long apiKeyId, Long userId);
     boolean isValid(String apiKey) throws NoSuchAlgorithmException;
+    boolean hasScope(String apiKey, Scope scope) throws NoSuchAlgorithmException;
 }

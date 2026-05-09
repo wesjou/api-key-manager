@@ -79,4 +79,18 @@ class GlobalExceptionHandler {
         return new ErrorEnvelope(new ErrorResponse(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage(),
                 LocalDateTime.now()));
     }
+
+    @ExceptionHandler(ApiKeyScopeDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    ErrorEnvelope handleApiKeyScopeDenied(ApiKeyScopeDeniedException ex) {
+        return new ErrorEnvelope(new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage(),
+                LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(InvalidScopeException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    ErrorEnvelope handleInvalidScope(InvalidScopeException ex) {
+        return new ErrorEnvelope(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(),
+                LocalDateTime.now()));
+    }
 }
