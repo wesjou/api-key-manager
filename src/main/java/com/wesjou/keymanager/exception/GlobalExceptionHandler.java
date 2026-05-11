@@ -42,7 +42,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     ErrorEnvelope handleInvalidEmail(MethodArgumentNotValidException ex) {
-        String errorMessage = ex.getBindingResult().getFieldErrors().getFirst().getDefaultMessage();
+        var errorMessage = ex.getBindingResult().getFieldErrors().getFirst().getDefaultMessage();
 
         if (errorMessage != null && !errorMessage.isEmpty()) {
             errorMessage = errorMessage.substring(0, 1).toUpperCase() + errorMessage.substring(1);

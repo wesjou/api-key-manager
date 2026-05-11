@@ -10,7 +10,6 @@ import com.wesjou.keymanager.exception.UserNotFoundException;
 import com.wesjou.keymanager.user.Role;
 import com.wesjou.keymanager.user.User;
 import com.wesjou.keymanager.user.UserRepository;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -50,24 +49,24 @@ class ApiKeyServiceImpl implements ApiKeyService {
             throw new ApiKeyScopeDeniedException();
         }
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        var user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
-        byte[] publicBytes = new byte[4];
+        var publicBytes = new byte[4];
         secureRandom.nextBytes(publicBytes);
-        String publicId = "ak_" + encoder.encodeToString(publicBytes).substring(0, 6);
+        var publicId = "ak_" + encoder.encodeToString(publicBytes).substring(0, 6);
 
-        byte[] secretBytes = new byte[32];
+        var secretBytes = new byte[32];
         secureRandom.nextBytes(secretBytes);
-        String secretKey = encoder.encodeToString(secretBytes);
+        var secretKey = encoder.encodeToString(secretBytes);
 
-        String fullKey = publicId + "." + secretKey;
+        var fullKey = publicId + "." + secretKey;
 
         // for database storing
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hashedKey = digest.digest(secretKey.getBytes(StandardCharsets.UTF_8));
-        String encodedHashedKey = encoder.encodeToString(hashedKey);
+        var digest = MessageDigest.getInstance("SHA-256");
+        var hashedKey = digest.digest(secretKey.getBytes(StandardCharsets.UTF_8));
+        var encodedHashedKey = encoder.encodeToString(hashedKey);
 
-        ApiKey apiKey = new ApiKey();
+        var apiKey = new ApiKey();
         apiKey.setUser(user);
         apiKey.setPublicId(publicId);
         apiKey.setKeyHash(encodedHashedKey);
@@ -84,9 +83,9 @@ class ApiKeyServiceImpl implements ApiKeyService {
     public List<ApiKeyInfoResponse> getApiKeys(Long userId) {
         authorizeApiKeyAccess(userId);
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        var user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
-        List<ApiKey> listApiKeys = apiKeyRepository.findAllByUser(user);
+        var listApiKeys = apiKeyRepository.findAllByUser(user);
 
         return listApiKeys.stream()
                 .map(apiKey -> new ApiKeyInfoResponse(
@@ -99,20 +98,20 @@ class ApiKeyServiceImpl implements ApiKeyService {
 
     @Override
     public void revokeApiKey(Long apiKeyId, Long userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             throw new UnauthenticatedException();
         }
 
-        boolean hasAdminRole = authentication.getAuthorities().stream()
+        var hasAdminRole = authentication.getAuthorities().stream()
                 .anyMatch(r -> Objects.equals(r.getAuthority(), "ROLE_ADMIN"));
 
-        ApiKey apiKey = apiKeyRepository.findById(apiKeyId).orElseThrow(ApiKeyNotFoundException::new);
+        var apiKey = apiKeyRepository.findById(apiKeyId).orElseThrow(ApiKeyNotFoundException::new);
 
-        String email = authentication.getName();
-        User currentAuthUser = userRepository.findByEmail(email).orElseThrow(AuthenticatedUserNotFoundException::new);
-        boolean isAuthUser = currentAuthUser.getId().equals(userId) || hasAdminRole;
-        boolean isOwner = apiKey.getUser().getId().equals(userId);
+        var email = authentication.getName();
+        var currentAuthUser = userRepository.findByEmail(email).orElseThrow(AuthenticatedUserNotFoundException::new);
+        var isAuthUser = currentAuthUser.getId().equals(userId) || hasAdminRole;
+        var isOwner = apiKey.getUser().getId().equals(userId);
         if (!(isAuthUser && isOwner)) {
             throw new ApiKeyAccessDeniedException();
         }
@@ -137,24 +136,24 @@ class ApiKeyServiceImpl implements ApiKeyService {
     }
 
     private Optional<ApiKey> authorizeApiKey(String apiKey) throws NoSuchAlgorithmException {
-        String[] parts = apiKey.split("\\.");
+        var parts = apiKey.split("\\.");
         if (parts.length != 2) {
             return Optional.empty();
         }
 
-        String publicId = parts[0];
-        String secretKey = parts[1];
+        var publicId = parts[0];
+        var secretKey = parts[1];
 
-        Optional<ApiKey> apiKeyOptional = apiKeyRepository.findByPublicId(publicId);
-        if (apiKeyOptional.isEmpty() || isInvalid(apiKeyOptional.get())) {
+        var apiKeyOpt = apiKeyRepository.findByPublicId(publicId);
+        if (apiKeyOpt.isEmpty() || isInvalid(apiKeyOpt.get())) {
             return Optional.empty();
         }
 
-        ApiKey storedApiKey = apiKeyOptional.get();
+        var storedApiKey = apiKeyOpt.get();
 
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hashedSecretKey = digest.digest(secretKey.getBytes(StandardCharsets.UTF_8));
-        String providedSecretKey = encoder.encodeToString(hashedSecretKey);
+        var digest = MessageDigest.getInstance("SHA-256");
+        var hashedSecretKey = digest.digest(secretKey.getBytes(StandardCharsets.UTF_8));
+        var providedSecretKey = encoder.encodeToString(hashedSecretKey);
 
         if (!MessageDigest.isEqual(providedSecretKey.getBytes(StandardCharsets.UTF_8),
                 storedApiKey.getKeyHash().getBytes(StandardCharsets.UTF_8))) {
@@ -165,23 +164,23 @@ class ApiKeyServiceImpl implements ApiKeyService {
     }
 
     private boolean isInvalid(ApiKey key) {
-        boolean isRevoked = key.isRevoked();
-        boolean isExpired = key.getExpiresAt() != null && key.getExpiresAt().isBefore(LocalDateTime.now());
+        var isRevoked = key.isRevoked();
+        var isExpired = key.getExpiresAt() != null && key.getExpiresAt().isBefore(LocalDateTime.now());
 
         return isRevoked || isExpired;
     }
 
     private User authorizeApiKeyAccess(Long userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             throw new UnauthenticatedException();
         }
 
-        String email = authentication.getName();
-        User currentAuthUser = userRepository.findByEmail(email)
+        var email = authentication.getName();
+        var currentAuthUser = userRepository.findByEmail(email)
                 .orElseThrow(AuthenticatedUserNotFoundException::new);
 
-        boolean hasAdminRole = authentication.getAuthorities().stream()
+        var hasAdminRole = authentication.getAuthorities().stream()
                 .anyMatch(r -> Objects.equals(r.getAuthority(), "ROLE_ADMIN"));
         if (!userId.equals(currentAuthUser.getId()) && !hasAdminRole) {
             throw new ApiKeyAccessDeniedException();

@@ -4,7 +4,6 @@ import com.wesjou.keymanager.jwt.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,7 +21,7 @@ class AuthController {
 
     @PostMapping("/api/v1/login")
     String login(@Valid @RequestBody LoginRequest request) {
-        Authentication authentication =
+        var authentication =
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(),
                         request.password()));
 

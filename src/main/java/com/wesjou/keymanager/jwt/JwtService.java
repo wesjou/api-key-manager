@@ -24,9 +24,9 @@ public class JwtService {
     }
 
     public String generateToken(Authentication authentication) {
-        String email = authentication.getName();
-        Date now = new Date();
-        Date expirationMs = new Date(now.getTime() + accessTokenExpirationMs);
+        var email = authentication.getName();
+        var now = new Date();
+        var expirationMs = new Date(now.getTime() + accessTokenExpirationMs);
 
         return Jwts.builder()
                 .subject(email)
@@ -41,7 +41,7 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, String email) {
-        Claims claims = extractAllClaims(token);
+        var claims = extractAllClaims(token);
         return claims.getSubject().equals(email) && !isTokenExpired(claims);
     }
 

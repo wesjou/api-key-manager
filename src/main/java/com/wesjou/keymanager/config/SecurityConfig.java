@@ -56,16 +56,16 @@ public class SecurityConfig {
                 .addFilterAfter(apiKeyAuthFilter, RateLimitingFilter.class)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
-                            ObjectMapper mapper = new ObjectMapper();
-                            String jsonString =
+                            var mapper = new ObjectMapper();
+                            var jsonString =
                                     mapper.writeValueAsString(new ErrorEnvelope(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Missing or invalid token", LocalDateTime.now())));
                             response.setStatus(401);
                             response.setContentType("application/json");
                             response.getWriter().write(jsonString);
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            ObjectMapper mapper = new ObjectMapper();
-                            String jsonString =
+                            var mapper = new ObjectMapper();
+                            var jsonString =
                                     mapper.writeValueAsString(new ErrorEnvelope(new ErrorResponse(HttpStatus.FORBIDDEN.value(), "You do not have permission to access", LocalDateTime.now())));
                             response.setStatus(403);
                             response.setContentType("application/json");

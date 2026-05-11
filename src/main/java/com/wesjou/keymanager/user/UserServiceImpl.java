@@ -22,9 +22,9 @@ class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(request.email()))
             throw new EmailAlreadyExistsException();
 
-        String encodedPassword = passwordEncoder.encode(request.password());
+        var encodedPassword = passwordEncoder.encode(request.password());
 
-        User user = new User();
+        var user = new User();
         user.setEmail(request.email());
         user.setPassword(encodedPassword);
         user.setRole(Role.USER);
