@@ -122,11 +122,6 @@ class ApiKeyServiceImpl implements ApiKeyService {
     }
 
     @Override
-    public boolean isValid(String apiKey) throws NoSuchAlgorithmException {
-        return authorizeApiKey(apiKey).isPresent();
-    }
-
-    @Override
     public boolean hasScope(String apiKey, Scope requiredScope) throws NoSuchAlgorithmException {
         var storedKey = authorizeApiKey(apiKey);
         if (storedKey.isEmpty()) {
