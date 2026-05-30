@@ -7,6 +7,7 @@ import com.wesjou.keymanager.jwt.JwtAuthenticationFilter;
 import com.wesjou.keymanager.limiter.RateLimitingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,6 +25,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 
 @Configuration
+@EnableAspectJAutoProxy
 @EnableWebSecurity
 public class SecurityConfig {
 
