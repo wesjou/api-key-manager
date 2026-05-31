@@ -10,15 +10,15 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Aspect
 @Component
-public class AuditLogAspect {
+class AuditLogAspect {
     private final AuditLogRepository auditLogRepository;
 
-    public AuditLogAspect(AuditLogRepository auditLogRepository) {
+    AuditLogAspect(AuditLogRepository auditLogRepository) {
         this.auditLogRepository = auditLogRepository;
     }
 
     @Around("@annotation(auditable)")
-    public Object auditLog(ProceedingJoinPoint joinPoint, Auditable auditable) throws Throwable {
+    Object auditLog(ProceedingJoinPoint joinPoint, Auditable auditable) throws Throwable {
         var audit = new AuditLog();
 
         audit.setAction(auditable.action());

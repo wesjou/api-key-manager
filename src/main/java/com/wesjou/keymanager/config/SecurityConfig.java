@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/login").permitAll()
                         .requestMatchers("/api/v1/users/*/apikeys").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/v1/users/*/apikeys/*").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/v1/audit-logs").hasRole("ADMIN")
                         .requestMatchers("/api/v1/data").permitAll()
                         .anyRequest().authenticated()
                 )
