@@ -1,5 +1,8 @@
 package com.wesjou.keymanager.apikey;
 
+import com.wesjou.keymanager.audit.AuditAction;
+import com.wesjou.keymanager.audit.AuditResourceType;
+import com.wesjou.keymanager.audit.Auditable;
 import com.wesjou.keymanager.exception.ApiKeyAccessDeniedException;
 import com.wesjou.keymanager.exception.ApiKeyNotFoundException;
 import com.wesjou.keymanager.exception.ApiKeyScopeDeniedException;
@@ -37,6 +40,7 @@ class ApiKeyServiceImpl implements ApiKeyService {
         this.userRepository = userRepository;
     }
 
+    @Auditable(action = AuditAction.API_KEY_CREATED, resourceType = AuditResourceType.API_KEY)
     @Override
     public ApiKeyResponse generateApiKey(Long userId, CreateApiKeyRequest createApiKeyRequest) throws NoSuchAlgorithmException {
         var scopes = createApiKeyRequest.scopes();
@@ -96,6 +100,7 @@ class ApiKeyServiceImpl implements ApiKeyService {
                 )).toList();
     }
 
+    @Auditable(action = AuditAction.API_KEY_REVOKED, resourceType = AuditResourceType.API_KEY, resourceIdArgIndex = 0)
     @Override
     public void revokeApiKey(Long apiKeyId, Long userId) {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
