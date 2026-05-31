@@ -9,7 +9,8 @@ It was built as a backend training project, but the implementation follows produ
 - Creates users with encrypted passwords
 - Authenticates users with JWT access tokens
 - Issues, lists, and revokes scoped API keys
-- Protects user management endpoints with JWT role-based access control
+- Records audit logs for security-sensitive actions (API key creation/revocation)
+- Protects user management and audit log endpoints with JWT role-based access control
 - Protects sample data endpoints with API-key scope checks
 - Validates API keys through a dedicated request filter
 - Returns consistent JSON error responses for auth and access failures
@@ -20,6 +21,7 @@ The application is organized by feature area:
 
 - `user` handles registration, login, and user lookup
 - `apikey` handles API key generation, scope validation, listing, revocation, and request filtering
+- `audit` handles automatic action logging via AOP and log retrieval API
 - `config` contains Spring Security and JWT filter wiring
 - `exception` centralizes domain and API error handling
 - `data` exposes a protected sample endpoint used to demonstrate authorization flows
@@ -67,6 +69,7 @@ The authenticated user creating a key controls which scopes are requested:
 |---| --- | --- | --- |
 | `POST`  | `/api/v1/users` | Public | Create a new user |
 | `GET`   | `/api/v1/users` | ADMIN only | List users |
+| `GET`   | `/api/v1/audit-logs` | ADMIN only | Retrieve latest system audit logs |
 | `POST`  | `/api/v1/login` | Public | Exchange credentials for a JWT |
 | `POST`  | `/api/v1/users/{userId}/apikeys` | Owner of {userId} or ADMIN | Generate an API key |
 | `GET`   | `/api/v1/users/{userId}/apikeys` | Owner of {userId} or ADMIN | List API keys for a user |
@@ -148,6 +151,7 @@ Run the test suite with:
 - JWTs are signed and validated server-side
 - API keys are stored as hashed secrets with a public prefix
 - API key scopes are modeled as an element collection and fetched with an entity graph for authorization checks
+- Audit logging is implemented using Aspect-Oriented Programming (AOP) and a custom `@Auditable` annotation to decouple logging from business logic
 - Expired or revoked API keys are rejected by the authorization layer
 - `ApiKeyAuthFilter` maps `GET` to `READ`, `POST` to `WRITE`, and `DELETE` to `ADMIN`
 - Custom exception handlers return JSON error envelopes instead of default HTML responses
