@@ -26,10 +26,10 @@ class DevDataSeeder implements CommandLineRunner {
         var password = "admin123";
 
         if (!userRepository.existsByEmail(email)) {
-            var user = new User();
-            user.setEmail(email);
-            user.setPassword(passwordEncoder.encode(password));
-            user.setRole(Role.ADMIN);
+            var user = User.builder()
+                    .email(email)
+                    .password(passwordEncoder.encode(password))
+                    .role(Role.ADMIN).build();
             userRepository.save(user);
         }
     }
