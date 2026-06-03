@@ -50,7 +50,7 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        var path = request.getServletPath();
+        var path = request.getRequestURI();
         return !path.equals("/api/v1/data");
     }
 }
