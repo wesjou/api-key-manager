@@ -94,7 +94,7 @@ public class ApiKeyAuthenticationIT {
         var authentication =
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), "test123"));
         var jwt = jwtService.generateToken(authentication);
-        
+
         var userId = user.getId();
 
         mockMvc.perform(post("/api/v1/users/{userId}/apikeys", userId)
@@ -104,9 +104,28 @@ public class ApiKeyAuthenticationIT {
                 .andExpect(status().isCreated());
 
         var keys = apiKeyRepository.findAllByUser(user);
-
         assertThat(keys).hasSize(1);
         assertThat(keys.getFirst().getScopes()).contains(Scope.ADMIN);
+    }
+
+    @Test
+    void shouldReturnForbidden_whenNormalUserCreatesAdminScopeKey() throws Exception {
+        var user = userRepository.save(createUser(Role.USER));
+
+        var authentication =
+                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), "test123"));
+        var jwt = jwtService.generateToken(authentication);
+
+        var userId = user.getId();
+
+        mockMvc.perform(post("/api/v1/users/{userId}/apikeys", userId)
+                        .header("Authorization", "Bearer " + jwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scopes\": [\"ADMIN\"]}"))
+                .andExpect(status().isForbidden());
+
+        var keys = apiKeyRepository.findAllByUser(user);
+        assertThat(keys).hasSize(0);
     }
 
     private String hashRawKey(@NonNull String key) throws NoSuchAlgorithmException {
