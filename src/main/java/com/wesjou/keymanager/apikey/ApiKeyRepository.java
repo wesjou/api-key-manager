@@ -10,6 +10,8 @@ import java.util.Optional;
 interface ApiKeyRepository extends JpaRepository<ApiKey, Long> {
     @EntityGraph(attributePaths = "scopes")
     Optional<ApiKey> findByPublicId(String publicId);
+
+    @EntityGraph(attributePaths = "scopes")
     List<ApiKey> findAllByUser(User user);
 }
 
