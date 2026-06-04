@@ -1,5 +1,6 @@
 package com.wesjou.keymanager.apikey;
 
+import com.wesjou.keymanager.jwt.JwtService;
 import com.wesjou.keymanager.user.Role;
 import com.wesjou.keymanager.user.User;
 import com.wesjou.keymanager.user.UserRepository;
@@ -9,6 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -29,16 +34,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 public class ApiKeyAuthenticationIT {
     @Autowired
-    private UserRepository userRepository;
+    UserRepository userRepository;
 
     @Autowired
-    private ApiKeyRepository apiKeyRepository;
+    ApiKeyRepository apiKeyRepository;
 
     @Autowired
-    private MockMvc mockMvc;
+    MockMvc mockMvc;
 
     @Autowired
     PasswordEncoder passwordEncoder;
+
+    @Autowired
+    JwtService jwtService;
+
+    @Autowired
+    AuthenticationManager authenticationManager;
 
     @AfterEach
     void tearDown() {
@@ -74,6 +85,28 @@ public class ApiKeyAuthenticationIT {
                         .header("x-api-key", rawApiKey))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error.message").value("User scope access is not allowed"));
+    }
+
+    @Test
+    void adminUser_shouldCreateAdminScopedKey() throws Exception {
+        var user = userRepository.save(createUser(Role.ADMIN));
+
+        var authentication =
+                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), "test123"));
+        var jwt = jwtService.generateToken(authentication);
+        
+        var userId = user.getId();
+
+        mockMvc.perform(post("/api/v1/users/{userId}/apikeys", userId)
+                        .header("Authorization", "Bearer " + jwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scopes\": [\"ADMIN\"]}"))
+                .andExpect(status().isCreated());
+
+        var keys = apiKeyRepository.findAllByUser(user);
+
+        assertThat(keys).hasSize(1);
+        assertThat(keys.getFirst().getScopes()).contains(Scope.ADMIN);
     }
 
     private String hashRawKey(@NonNull String key) throws NoSuchAlgorithmException {
