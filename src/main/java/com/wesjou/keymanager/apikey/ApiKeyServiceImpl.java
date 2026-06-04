@@ -95,6 +95,7 @@ class ApiKeyServiceImpl implements ApiKeyService {
                 .map(apiKey -> new ApiKeyInfoResponse(
                         apiKey.getId(),
                         apiKey.getPublicId(),
+                        apiKey.getScopes(),
                         apiKey.isRevoked(),
                         apiKey.getCreatedAt()
                 )).toList();
