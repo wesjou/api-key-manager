@@ -16,9 +16,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.Set;
 
@@ -80,5 +83,28 @@ public class ApiKeyServiceImplTest {
         // check if stored key is hashed
         var rawSecret = response.apiKey().split("\\.")[1];
         assertThat(savedApiKey.getKeyHash()).isNotEqualTo(rawSecret);
+    }
+
+    @Test
+    void hasScope_whenAdminScopeIsPresent_returnTrue() throws NoSuchAlgorithmException {
+        var publicId = "ak_test";
+        var secret = "secret";
+
+        var digest = MessageDigest.getInstance("SHA-256");
+        var hashedKey = digest.digest(secret.getBytes(StandardCharsets.UTF_8));
+        var encodedHashedKey = Base64.getUrlEncoder().withoutPadding().encodeToString(hashedKey);
+
+        var apiKey = ApiKey.builder()
+                .publicId(publicId)
+                .keyHash(encodedHashedKey)
+                .scopes(Set.of(Scope.ADMIN))
+                .revoked(false)
+                .expiresAt(LocalDateTime.now().plusDays(30))
+                .build();
+
+        when(apiKeyRepository.findByPublicId(publicId)).thenReturn(Optional.of(apiKey));
+
+        var result = apiKeyService.hasScope(publicId + "." + secret, Scope.READ);
+        assertThat(result).isTrue();
     }
 }
