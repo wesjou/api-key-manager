@@ -88,6 +88,21 @@ public class ApiKeyAuthenticationIT {
     }
 
     @Test
+    void shouldReturn401_whenApiKeyHeaderIsMissing() throws Exception {
+        mockMvc.perform(get("/api/v1/data"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.message").value("Invalid API key"));
+    }
+
+    @Test
+    void shouldReturn401_whenApiKeyHeaderIsMalformed() throws Exception {
+        mockMvc.perform(get("/api/v1/data")
+                        .header("x-api-key", "malformed_key"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.message").value("Invalid API key"));
+    }
+
+    @Test
     void shouldCreateAdminScopedKey_whenUserHasAdminRole() throws Exception {
         var user = userRepository.save(createUser(Role.ADMIN));
 
