@@ -58,7 +58,7 @@ public class ApiKeyAuthenticationIT {
     }
 
     @Test
-    void apiKey_shouldAccessReadEndpoint() throws Exception {
+    void shouldAccessReadEndpoint_whenApiKeyHasReadScope() throws Exception {
         var user = userRepository.save(createUser(Role.USER));
 
         var key = "secret";
@@ -73,7 +73,7 @@ public class ApiKeyAuthenticationIT {
     }
 
     @Test
-    void apiKey_shouldNotAccessCreateEndpoint() throws Exception {
+    void shouldNotAccessCreateEndpoint_whenApiKeyScopeIsReadOnly() throws Exception {
         var user = userRepository.save(createUser(Role.USER));
 
         var key = "secret";
@@ -88,7 +88,7 @@ public class ApiKeyAuthenticationIT {
     }
 
     @Test
-    void adminUser_shouldCreateAdminScopedKey() throws Exception {
+    void shouldCreateAdminScopedKey_whenUserHasAdminRole() throws Exception {
         var user = userRepository.save(createUser(Role.ADMIN));
 
         var authentication =
