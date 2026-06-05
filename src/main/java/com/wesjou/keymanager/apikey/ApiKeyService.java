@@ -8,4 +8,5 @@ interface ApiKeyService {
     List<ApiKeyInfoResponse> getApiKeys(Long userId);
     void revokeApiKey(Long apiKeyId, Long userId);
     boolean hasScope(String apiKey, Scope scope) throws NoSuchAlgorithmException;
+    boolean isValid(String apiKey) throws NoSuchAlgorithmException;
 }

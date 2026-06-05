@@ -141,6 +141,14 @@ class ApiKeyServiceImpl implements ApiKeyService {
         return scopes.contains(Scope.ADMIN) || scopes.contains(requiredScope);
     }
 
+    @Override
+    public boolean isValid(String apiKey) throws NoSuchAlgorithmException {
+        if (apiKey == null || apiKey.isEmpty()) {
+            return false;
+        }
+        return authorizeApiKey(apiKey).isPresent();
+    }
+
     private Optional<ApiKey> authorizeApiKey(String apiKey) throws NoSuchAlgorithmException {
         var parts = apiKey.split("\\.");
         if (parts.length != 2) {
@@ -193,5 +201,4 @@ class ApiKeyServiceImpl implements ApiKeyService {
         }
         return currentAuthUser;
     }
-
 }

@@ -28,7 +28,7 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             var authHeader = request.getHeader("x-api-key");
-            if (authHeader == null) {
+            if (!apiKeyService.isValid(authHeader)) {
                 throw new BadApiKeyException();
             }
 
