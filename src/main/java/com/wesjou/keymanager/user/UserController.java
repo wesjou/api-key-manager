@@ -40,7 +40,7 @@ class UserController {
     }
 
     @Operation(summary = "List all users", description = "Retrieves a complete list of all users registered in the " +
-            "system.")
+            "system. Restricted to users with the ADMIN role.")
     @SecurityRequirement(name = "jwtAuth")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "All users retrieved"),
