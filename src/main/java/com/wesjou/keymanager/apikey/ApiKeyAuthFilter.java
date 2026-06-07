@@ -51,6 +51,6 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         var path = request.getRequestURI();
-        return !path.equals("/api/v1/data");
+        return path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || !path.equals("/api/v1/data");
     }
 }
