@@ -29,9 +29,6 @@ public class OpenApiConfig {
                                 new SecurityScheme()
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
-                                        .name("x-api-key")))
-                .addSecurityItem(new SecurityRequirement()
-                        .addList("jwtAuth")
-                        .addList("apiKeyAuth"));
+                                        .name("x-api-key")));
     }
 }
