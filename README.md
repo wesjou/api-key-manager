@@ -62,6 +62,10 @@ The authenticated user creating a key controls which scopes are requested:
 - PostgreSQL
 - JWT (`jjwt`)
 - JUnit 5 + Mockito
+- Bucket4j
+- SpringDoc OpenAPI
+- Docker & Docker Compose
+- GitHub Actions
 
 ## Core Endpoints
 
@@ -111,6 +115,7 @@ The raw API key is returned only at creation time. After that, only the hashed s
 - Java 21
 - PostgreSQL
 - Gradle Wrapper included in the repo
+- Docker & Docker Compose (optional, for containerized run)
 
 ### Database
 
@@ -133,13 +138,41 @@ If they are not set, the application falls back to development defaults from `ap
 
 ### Run the Application
 
-Use the Gradle wrapper:
+#### Using Gradle
 
-- `./gradlew bootRun`
+Use the Gradle wrapper to run the application locally. To activate the `dev` profile (which enables dev database seeding):
+
+- `./gradlew bootRun --args='--spring.profiles.active=dev'`
+
+#### Using Docker Compose
+
+Alternatively, you can run the application and its PostgreSQL database inside Docker containers:
+
+- `docker compose up --build`
+
+This will:
+- Build the Spring Boot application image using the multi-stage `Dockerfile`
+- Start a PostgreSQL 18.3 container (`keymanager-db`) exposed on port `5431`
+- Start the application container (`keymanager-app`) exposed on port `8080`
+- Activate the `dev` Spring profile
+- Persist database records across restarts using a named Docker volume (`pgdata`)
+
+### Dev Admin Account
+
+When running the application with the `dev` profile active (such as when starting it via Docker Compose), a default administrator account is automatically seeded:
+
+- **Email:** `admin@example.com`
+- **Password:** `admin123`
+
+You can use these credentials to authenticate via `POST /api/v1/login` to obtain an administrator JWT.
 
 ## Testing
 
-The project includes unit tests for API key generation and a Spring Boot application context test.
+The project includes comprehensive unit and integration tests covering:
+- API key generation, validation, and revocation logic
+- API key authentication filter, including malformed header handling and scope authorization
+- AOP-based audit logging with SQL-based database cleanup for test isolation
+- Global exception handling and JSON error response envelopes
 
 Run the test suite with:
 
@@ -153,5 +186,29 @@ Run the test suite with:
 - API key scopes are modeled as an element collection and fetched with an entity graph for authorization checks
 - Audit logging is implemented using Aspect-Oriented Programming (AOP) and a custom `@Auditable` annotation to decouple logging from business logic
 - Expired or revoked API keys are rejected by the authorization layer
-- `ApiKeyAuthFilter` maps `GET` to `READ`, `POST` to `WRITE`, and `DELETE` to `ADMIN`
+- `ApiKeyAuthFilter` performs path-matching using the request URI and handles malformed keys with custom exception responses
+- OpenAPI/Swagger endpoints bypass the API key filter completely
+- Users are registered with a unique email constraint enforced at the database level
+- Entities use the Lombok builder pattern with protected no-args constructors for JPA compatibility
+- API key queries eagerly load scopes to avoid N+1 queries when listing keys
+- API key list and retrieval endpoints include the granted scopes in the response metadata
 - Custom exception handlers return JSON error envelopes instead of default HTML responses
+
+## API Documentation (Swagger)
+
+The API is fully documented using OpenAPI 3.0. When the application is running, you can access the interactive Swagger UI at:
+
+`http://localhost:8080/swagger-ui.html`
+
+The documentation includes:
+- Detailed request/response schemas
+- Security requirements for each endpoint (JWT vs API Key)
+- Integrated "Try it out" functionality for all protected resources
+
+## CI/CD Pipeline
+
+A GitHub Actions workflow is implemented in `.github/workflows/ci.yml`. On every push to the `main` branch, the pipeline:
+1. Spins up a PostgreSQL service container
+2. Sets up a Java 21 environment
+3. Executes the full Gradle test suite
+4. Verifies the Docker image build
