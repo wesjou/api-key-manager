@@ -1,8 +1,8 @@
 # KeyManager
 
-KeyManager is a Spring Boot backend for managing users, JWT-based authentication, and scoped API key issuance for protected machine-to-machine data access.
+KeyManager is a Spring Boot backend for user management, JWT-based authentication, and secure API key lifecycle management. The system enables machine-to-machine access via scoped API keys while enforcing security controls, including rate limiting, key expiration, revocation, and audit logging.
 
-It was built as a backend training project, but the implementation follows production-style patterns: stateless auth, password hashing, role-based authorization, hashed API key storage, and structured error handling.
+The project follows production-oriented backend development practices, including stateless authentication, password hashing, role-based authorization, hashed API key storage, centralized exception handling, environment-based configuration, OpenAPI documentation, Dockerized deployment, and automated testing.
 
 ## What It Does
 
